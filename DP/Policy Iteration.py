@@ -7,7 +7,7 @@ from lib.envs.gridworld import GridworldEnv
 
 # Taken from Policy Evaluation Exercise!
 
-def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
+def optimal_policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
     """
     Evaluate a policy given an environment and a full description of the environment's dynamics.
     
@@ -44,6 +44,34 @@ def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
             break
     return np.array(V)
 
+def policy_eval(policy, env, discount_factor=1.0):
+    """
+    Evaluate a policy given an environment and a full description of the environment's dynamics.
+    
+    Args:
+        policy: [S, A] shaped matrix representing the policy.
+        env: OpenAI env. env.P represents the transition probabilities of the environment.
+            env.P[s][a] is a list of transition tuples (prob, next_state, reward, done).
+            env.nS is a number of states in the environment. 
+            env.nA is a number of actions in the environment.
+        theta: We stop evaluation once our value function change is less than theta for all states.
+        discount_factor: Gamma discount factor.
+    
+    Returns:
+        Vector of length env.nS representing the value function.
+    """
+    # Start with a random (all 0) value function
+    V = np.zeros(env.nS)
+    while True:
+        for s in range(env.nS):
+            v = 0
+            for a, action_prob in enumerate(policy[s]):
+                for  prob, next_state, reward, done in env.P[s][a]:
+                    v += action_prob * prob * (reward + discount_factor * V[next_state])
+            V[s] = v
+        break
+    return np.array(V)
+
 def policy_improvement(env, policy_eval_fn=policy_eval, discount_factor=1.0):
     """
     Policy Improvement Algorithm. Iteratively evaluates and improves a policy
@@ -69,6 +97,7 @@ def policy_improvement(env, policy_eval_fn=policy_eval, discount_factor=1.0):
         # Implement this!
         previous_policy = np.copy(policy)
         V = policy_eval_fn(policy, env)
+        print(V)
         for s in range(env.nS):
             next_values= np.zeros([env.nA])
             for a, action_prob in enumerate(policy[s]):
@@ -83,7 +112,7 @@ def policy_improvement(env, policy_eval_fn=policy_eval, discount_factor=1.0):
             print(iteration)
             break
         
-    return policy, policy_eval_fn(policy, env)
+    return policy, optimal_policy_eval(policy, env)
 
 if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=2)
